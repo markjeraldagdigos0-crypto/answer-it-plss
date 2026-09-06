@@ -9,7 +9,9 @@ app.use(express.urlencoded({ extended: true }));
 // In-memory array to store submissions during runtime
 const submissions = [];
 
-// Serve the complete HTML, CSS, and Client-side JS directly
+// ==========================================
+// 1. PUBLIC-FACING PAGE (Route: /)
+// ==========================================
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -160,62 +162,6 @@ app.get('/', (req, res) => {
           color: #666;
           font-size: 1.1rem;
         }
-
-        /* Admin / Submissions View */
-        .admin-section {
-          margin-top: 35px;
-          border-top: 2px dashed #eee;
-          padding-top: 20px;
-          text-align: left;
-        }
-
-        .admin-section h3 {
-          font-size: 1.1rem;
-          color: #4a154b;
-          margin-bottom: 10px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .table-container {
-          max-height: 150px;
-          overflow-y: auto;
-          border: 1px solid #eee;
-          border-radius: 10px;
-          background: #fafafa;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.85rem;
-        }
-
-        th, td {
-          padding: 8px 12px;
-          text-align: left;
-          border-bottom: 1px solid #eee;
-        }
-
-        th {
-          background: #f1f1f1;
-          color: #333;
-          font-weight: 600;
-        }
-
-        td {
-          color: #555;
-        }
-
-        /* Scrollbar styling */
-        .table-container::-webkit-scrollbar {
-          width: 6px;
-        }
-        .table-container::-webkit-scrollbar-thumb {
-          background: #ddd;
-          border-radius: 10px;
-        }
       </style>
     </head>
     <body>
@@ -248,33 +194,11 @@ app.get('/', (req, res) => {
             <p id="displayed-username" style="font-weight: 600; color: #e1306c; margin-top: 5px;"></p>
           </div>
         </div>
-
-        <!-- Admin View / Live List -->
-        <div class="admin-section">
-          <h3>
-            <span>📋 Live Submissions</span>
-            <span id="sub-count" style="font-size: 0.8rem; background: #833ab4; color: white; padding: 2px 8px; border-radius: 10px;">0</span>
-          </h3>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody id="submissions-tbody">
-                <tr><td colspan="2" style="text-align: center; color: #999;">No submissions yet</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
 
       <script>
         const yesBtn = document.getElementById('yes-btn');
         const noBtn = document.getElementById('no-btn');
-        const btnContainer = document.getElementById('btn-container');
         const playfulMsg = document.getElementById('playful-msg');
         
         const promptSection = document.getElementById('prompt-section');
@@ -284,9 +208,6 @@ app.get('/', (req, res) => {
         const usernameInput = document.getElementById('username-input');
         const submitBtn = document.getElementById('submit-btn');
         const displayedUsername = document.getElementById('displayed-username');
-        
-        const submissionsTbody = document.getElementById('submissions-tbody');
-        const subCount = document.getElementById('sub-count');
 
         const messages = [
           "Are you sure? 😏",
@@ -350,35 +271,176 @@ app.get('/', (req, res) => {
               inputSection.classList.add('hidden');
               successSection.classList.remove('hidden');
               displayedUsername.textContent = 'Instagram Username: ' + val;
-              
-              loadSubmissions();
             }
           } catch (err) {
             console.error('Error submitting username:', err);
           }
         }
+      </script>
+    </body>
+    </html>
+  `);
+});
 
-        // Fetch and render stored submissions
+// ==========================================
+// 2. SEPARATE ADMIN DASHBOARD (Route: /admin)
+// ==========================================
+app.get('/admin', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Admin Dashboard - Submissions 💜</title>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+          background: #f4f5f7;
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+          color: #333;
+        }
+
+        .admin-card {
+          background: white;
+          padding: 30px;
+          border-radius: 20px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+          max-width: 600px;
+          width: 100%;
+        }
+
+        .header-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #f1f1f1;
+          padding-bottom: 15px;
+        }
+
+        h2 {
+          color: #4a154b;
+          font-size: 1.5rem;
+        }
+
+        .badge {
+          background: #833ab4;
+          color: white;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+
+        .table-container {
+          max-height: 350px;
+          overflow-y: auto;
+          border: 1px solid #eee;
+          border-radius: 12px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.95rem;
+        }
+
+        th, td {
+          padding: 12px 16px;
+          text-align: left;
+          border-bottom: 1px solid #eee;
+        }
+
+        th {
+          background: #fafafa;
+          color: #444;
+          font-weight: 600;
+        }
+
+        td {
+          color: #555;
+        }
+
+        .refresh-btn {
+          margin-top: 20px;
+          background: linear-gradient(135deg, #833ab4, #fd1d1d);
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          border-radius: 50px;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+          opacity: 0.9;
+        }
+      </style>
+    </head>
+    <body>
+
+      <div class="admin-card">
+        <div class="header-flex">
+          <h2>📋 Admin Submissions</h2>
+          <span class="badge" id="sub-count">0 Submissions</span>
+        </div>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Time Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="submissions-tbody">
+              <tr><td colspan="2" style="text-align: center; color: #999;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button class="refresh-btn" onclick="loadSubmissions()">Refresh List</button>
+      </div>
+
+      <script>
         async function loadSubmissions() {
           try {
             const res = await fetch('/api/submissions');
             const data = await res.json();
             
-            subCount.textContent = data.length;
+            const subCount = document.getElementById('sub-count');
+            const submissionsTbody = document.getElementById('submissions-tbody');
+
+            subCount.textContent = data.length + ' Submissions';
+            
             if (data.length === 0) {
               submissionsTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999;">No submissions yet</td></tr>';
               return;
             }
 
             submissionsTbody.innerHTML = data.map(function(item) {
-              return '<tr><td>' + item.username + '</td><td>' + item.time + '</td></tr>';
+              return '<tr><td style="font-weight: 500; color: #e1306c;">' + item.username + '</td><td>' + item.time + '</td></tr>';
             }).join('');
           } catch (err) {
             console.error('Error loading submissions:', err);
           }
         }
 
-        // Initial load
+        // Load on page open
         loadSubmissions();
       </script>
     </body>
@@ -386,7 +448,9 @@ app.get('/', (req, res) => {
   `);
 });
 
-// API endpoint to handle submissions
+// ==========================================
+// 3. API ENDPOINTS
+// ==========================================
 app.post('/api/submit', (req, res) => {
   const { username } = req.body;
   if (!username) {
@@ -395,14 +459,13 @@ app.post('/api/submit', (req, res) => {
 
   const newEntry = {
     username,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    time: new Date().toLocaleString()
   };
 
   submissions.unshift(newEntry);
   res.json({ success: true, message: 'Saved successfully', submissions });
 });
 
-// API endpoint to retrieve stored submissions
 app.get('/api/submissions', (req, res) => {
   res.json(submissions);
 });

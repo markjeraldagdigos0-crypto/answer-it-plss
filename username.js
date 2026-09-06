@@ -223,6 +223,7 @@ app.get('/', (req, res) => {
       <div class="container" id="main-card">
         <h1 id="main-question">Can I get your Instagram Username? 💜</h1>
         
+        <!-- Step 1: Prompt buttons -->
         <div id="prompt-section">
           <div class="btn-container" id="btn-container">
             <button id="yes-btn">YES</button>
@@ -231,6 +232,7 @@ app.get('/', (req, res) => {
           <div class="playful-msg" id="playful-msg"></div>
         </div>
 
+        <!-- Step 2: Input Section (Initially Hidden) -->
         <div id="input-section" class="hidden fade-in">
           <div class="input-group">
             <label for="username-input" style="font-weight: 500; color: #555;">Enter your Instagram Username:</label>
@@ -239,6 +241,7 @@ app.get('/', (req, res) => {
           </div>
         </div>
 
+        <!-- Step 3: Success Section (Initially Hidden) -->
         <div id="success-section" class="hidden fade-in">
           <div class="success-box">
             <h2>Thank you! 💜</h2>
@@ -246,6 +249,7 @@ app.get('/', (req, res) => {
           </div>
         </div>
 
+        <!-- Admin View / Live List -->
         <div class="admin-section">
           <h3>
             <span>📋 Live Submissions</span>
@@ -304,16 +308,11 @@ app.get('/', (req, res) => {
           const containerRect = btnContainer.getBoundingClientRect();
           const btnRect = noBtn.getBoundingClientRect();
           
-          // Calculate random offsets safely inside the bounds
-          const maxX = containerRect.width - btnRect.width;
-          const maxY = 100; // vertical range limit
-          
           const randomX = (Math.random() - 0.5) * 180;
           const randomY = (Math.random() - 0.5) * 80;
 
-          noBtn.style.transform = \`translate(\${randomX}px, \${randomY}px)\`;
+          noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
           
-          // Show random playful text
           const randomMsg = messages[Math.floor(Math.random() * messages.length)];
           playfulMsg.textContent = randomMsg;
         }
@@ -338,7 +337,6 @@ app.get('/', (req, res) => {
             return;
           }
 
-          // Ensure it starts with @ for display polish if user forgot
           if (!val.startsWith('@')) {
             val = '@' + val;
           }
@@ -354,7 +352,7 @@ app.get('/', (req, res) => {
             if (data.success) {
               inputSection.classList.add('hidden');
               successSection.classList.remove('hidden');
-              displayedUsername.textContent = \`Instagram Username: \${val}\`;
+              displayedUsername.textContent = `Instagram Username: ${val}`;
               
               loadSubmissions();
             }
@@ -371,16 +369,16 @@ app.get('/', (req, res) => {
             
             subCount.textContent = data.length;
             if (data.length === 0) {
-              submissionsTbody.innerHTML = \`<tr><td colspan="2" style="text-align: center; color: #999;">No submissions yet</td></tr>\`;
+              submissionsTbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: #999;">No submissions yet</td></tr>`;
               return;
             }
 
-            submissionsTbody.innerHTML = data.map(item => \`
+            submissionsTbody.innerHTML = data.map(item => `
               <tr>
-                <td>\${item.username}</td>
-                <td>\${item.time}</td>
+                <td>${item.username}</td>
+                <td>${item.time}</td>
               </tr>
-            \`).join('');
+            `).join('');
           } catch (err) {
             console.error('Error loading submissions:', err);
           }
@@ -394,7 +392,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// API endpoint to handle submissions and persist into runtime storage / localStorage pattern
+// API endpoint to handle submissions
 app.post('/api/submit', (req, res) => {
   const { username } = req.body;
   if (!username) {
@@ -406,7 +404,7 @@ app.post('/api/submit', (req, res) => {
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   };
 
-  submissions.unshift(newEntry); // Add newest entry to the top
+  submissions.unshift(newEntry);
   res.json({ success: true, message: 'Saved successfully', submissions });
 });
 
@@ -417,5 +415,5 @@ app.get('/api/submissions', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(\`Server is running on http://localhost:\${PORT}\`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });

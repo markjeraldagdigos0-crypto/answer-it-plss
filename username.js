@@ -297,28 +297,25 @@ app.get('/', (req, res) => {
           "Give it a chance! ✨"
         ];
 
-        // Playful NO button movement (smooth & constrained within container boundaries)
+        // Playful NO button movement
         noBtn.addEventListener('mouseover', moveNoButton);
-        noBtn.addEventListener('click', (e) => {
+        noBtn.addEventListener('click', function(e) {
           e.preventDefault();
           moveNoButton();
         });
 
         function moveNoButton() {
-          const containerRect = btnContainer.getBoundingClientRect();
-          const btnRect = noBtn.getBoundingClientRect();
-          
           const randomX = (Math.random() - 0.5) * 180;
           const randomY = (Math.random() - 0.5) * 80;
 
-          noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+          noBtn.style.transform = 'translate(' + randomX + 'px, ' + randomY + 'px)';
           
           const randomMsg = messages[Math.floor(Math.random() * messages.length)];
           playfulMsg.textContent = randomMsg;
         }
 
         // YES button clicked
-        yesBtn.addEventListener('click', () => {
+        yesBtn.addEventListener('click', function() {
           promptSection.classList.add('hidden');
           inputSection.classList.remove('hidden');
           usernameInput.focus();
@@ -326,7 +323,7 @@ app.get('/', (req, res) => {
 
         // Submit button clicked
         submitBtn.addEventListener('click', handleSubmission);
-        usernameInput.addEventListener('keypress', (e) => {
+        usernameInput.addEventListener('keypress', function(e) {
           if (e.key === 'Enter') handleSubmission();
         });
 
@@ -352,7 +349,7 @@ app.get('/', (req, res) => {
             if (data.success) {
               inputSection.classList.add('hidden');
               successSection.classList.remove('hidden');
-              displayedUsername.textContent = `Instagram Username: ${val}`;
+              displayedUsername.textContent = 'Instagram Username: ' + val;
               
               loadSubmissions();
             }
@@ -369,16 +366,13 @@ app.get('/', (req, res) => {
             
             subCount.textContent = data.length;
             if (data.length === 0) {
-              submissionsTbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: #999;">No submissions yet</td></tr>`;
+              submissionsTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999;">No submissions yet</td></tr>';
               return;
             }
 
-            submissionsTbody.innerHTML = data.map(item => `
-              <tr>
-                <td>${item.username}</td>
-                <td>${item.time}</td>
-              </tr>
-            `).join('');
+            submissionsTbody.innerHTML = data.map(function(item) {
+              return '<tr><td>' + item.username + '</td><td>' + item.time + '</td></tr>';
+            }).join('');
           } catch (err) {
             console.error('Error loading submissions:', err);
           }
@@ -415,5 +409,5 @@ app.get('/api/submissions', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log('Server is running on http://localhost:' + PORT);
 });

@@ -1,0 +1,15 @@
+{
+  "name": "instagram-username-collector",
+  "version": "1.0.0",
+  "description": "A fun and interactive web app to collect Instagram usernames with an Express backend.",
+  "main": "username.js",
+  "scripts": {
+    "start": "node username.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -6,8 +6,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// In-memory array to store submissions during runtime
+// Runtime storage for submissions and configurable question
 const submissions = [];
+let currentQuestion = "Can I get your Instagram Username? 💜";
 
 // ==========================================
 // 1. PUBLIC-FACING PAGE (Route: /)
@@ -167,7 +168,7 @@ app.get('/', (req, res) => {
     <body>
 
       <div class="container" id="main-card">
-        <h1 id="main-question">Can I get your Instagram Username? 💜</h1>
+        <h1 id="main-question">Loading question...</h1>
         
         <!-- Step 1: Prompt buttons -->
         <div id="prompt-section">
@@ -208,6 +209,19 @@ app.get('/', (req, res) => {
         const usernameInput = document.getElementById('username-input');
         const submitBtn = document.getElementById('submit-btn');
         const displayedUsername = document.getElementById('displayed-username');
+        const mainQuestion = document.getElementById('main-question');
+
+        // Fetch current question on load
+        async function fetchQuestion() {
+          try {
+            const res = await fetch('/api/question');
+            const data = await res.json();
+            mainQuestion.textContent = data.question;
+          } catch (err) {
+            console.error('Error fetching question:', err);
+          }
+        }
+        fetchQuestion();
 
         const messages = [
           "Are you sure? 😏",
@@ -344,8 +358,54 @@ app.get('/admin', (req, res) => {
           font-weight: 600;
         }
 
+        .section-box {
+          margin-bottom: 25px;
+        }
+
+        .section-box label {
+          display: block;
+          font-weight: 600;
+          margin-bottom: 8px;
+          color: #555;
+          font-size: 0.95rem;
+        }
+
+        .input-row {
+          display: flex;
+          gap: 10px;
+        }
+
+        .input-row input {
+          flex: 1;
+          padding: 10px 15px;
+          border: 2px solid #ddd;
+          border-radius: 10px;
+          font-size: 0.95rem;
+          outline: none;
+        }
+
+        .input-row input:focus {
+          border-color: #833ab4;
+        }
+
+        .btn-action {
+          background: linear-gradient(135deg, #833ab4, #fd1d1d);
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+        }
+
+        .btn-action:hover {
+          opacity: 0.9;
+        }
+
         .table-container {
-          max-height: 350px;
+          max-height: 250px;
           overflow-y: auto;
           border: 1px solid #eee;
           border-radius: 12px;
@@ -373,21 +433,9 @@ app.get('/admin', (req, res) => {
           color: #555;
         }
 
-        .refresh-btn {
+        .footer-action {
           margin-top: 20px;
-          background: linear-gradient(135deg, #833ab4, #fd1d1d);
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          border-radius: 50px;
-          cursor: pointer;
-          transition: opacity 0.2s ease;
-        }
-
-        .refresh-btn:hover {
-          opacity: 0.9;
+          text-align: right;
         }
       </style>
     </head>
@@ -395,30 +443,51 @@ app.get('/admin', (req, res) => {
 
       <div class="admin-card">
         <div class="header-flex">
-          <h2>📋 Admin Submissions</h2>
+          <h2>🛠️ Admin Dashboard</h2>
           <span class="badge" id="sub-count">0 Submissions</span>
         </div>
+
+        <!-- Question Editor Section -->
+        <div class="section-box">
+          <label for="question-input">Change Main Question:</label>
+          <div class="input-row">
+            <input type="text" id="question-input" placeholder="Enter new question...">
+            <button class="btn-action" onclick="updateQuestion()">Update</button>
+          </div>
+        </div>
         
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Time Submitted</th>
-              </tr>
-            </thead>
-            <tbody id="submissions-tbody">
-              <tr><td colspan="2" style="text-align: center; color: #999;">Loading...</td></tr>
-            </tbody>
-          </table>
+        <!-- Submissions Table Section -->
+        <div class="section-box">
+          <label>📋 Live Submissions:</label>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Time Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="submissions-tbody">
+                <tr><td colspan="2" style="text-align: center; color: #999;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <button class="refresh-btn" onclick="loadSubmissions()">Refresh List</button>
+        <div class="footer-action">
+          <button class="btn-action" onclick="loadAdminData()">Refresh Data</button>
+        </div>
       </div>
 
       <script>
-        async function loadSubmissions() {
+        async function loadAdminData() {
           try {
+            // Load current question
+            const qRes = await fetch('/api/question');
+            const qData = await qRes.json();
+            document.getElementById('question-input').value = qData.question;
+
+            // Load submissions
             const res = await fetch('/api/submissions');
             const data = await res.json();
             
@@ -436,12 +505,34 @@ app.get('/admin', (req, res) => {
               return '<tr><td style="font-weight: 500; color: #e1306c;">' + item.username + '</td><td>' + item.time + '</td></tr>';
             }).join('');
           } catch (err) {
-            console.error('Error loading submissions:', err);
+            console.error('Error loading admin data:', err);
+          }
+        }
+
+        async function updateQuestion() {
+          const newQ = document.getElementById('question-input').value.trim();
+          if (!newQ) {
+            alert('Question cannot be empty!');
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/question', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ question: newQ })
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert('Question updated successfully! ✨');
+            }
+          } catch (err) {
+            console.error('Error updating question:', err);
           }
         }
 
         // Load on page open
-        loadSubmissions();
+        loadAdminData();
       </script>
     </body>
     </html>
@@ -451,6 +542,19 @@ app.get('/admin', (req, res) => {
 // ==========================================
 // 3. API ENDPOINTS
 // ==========================================
+app.get('/api/question', (req, res) => {
+  res.json({ question: currentQuestion });
+});
+
+app.post('/api/question', (req, res) => {
+  const { question } = req.body;
+  if (question) {
+    currentQuestion = question;
+    return res.json({ success: true, question: currentQuestion });
+  }
+  res.status(400).json({ success: false, message: 'Invalid question' });
+});
+
 app.post('/api/submit', (req, res) => {
   const { username } = req.body;
   if (!username) {
